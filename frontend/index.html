@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Facial Palsy Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 40px;
+        }
+        .container {
+            max-width: 520px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 14px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        input[type="file"] {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #084298;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            background: #eef2f7;
+            border-radius: 6px;
+        }
+        .error {
+            color: #b00020;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Facial Palsy Detection</h2>
+
+    <input type="file" id="imageInput" accept="image/*">
+
+    <!-- CRITICAL FIX: type="button" -->
+    <button type="button" onclick="predict()">Predict</button>
+
+    <div id="output" class="result" style="display:none;"></div>
+</div>
+
+<script>
+console.log("Frontend loaded");
+
+async function predict() {
+    console.log("Predict clicked");
+
+    const fileInput = document.getElementById("imageInput");
+    const output = document.getElementById("output");
+
+    if (!fileInput.files.length) {
+        alert("Please select an image");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    output.style.display = "block";
+    output.innerHTML = "Processing...";
+
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+        console.log("Response:", data);
+
+        if (!response.ok) {
+            output.innerHTML = `<div class="error">${data.detail}</div>`;
+            return;
+        }
+
+        output.innerHTML = `
+            <strong>Prediction:</strong> ${data.prediction}<br>
+            <strong>Confidence:</strong> ${(data.confidence * 100).toFixed(2)}%<br><br>
+            <strong>Features:</strong><br>
+            Eyebrow angle: ${data.features.eyebrow_angle.toFixed(2)}<br>
+            Eye angle: ${data.features.eye_angle.toFixed(2)}<br>
+            Mouth angle: ${data.features.mouth_angle.toFixed(2)}
+        `;
+    } catch (err) {
+        console.error(err);
+        output.innerHTML = `<div class="error">Server error</div>`;
+    }
+}
+</script>
+
+</body>
+</html>
